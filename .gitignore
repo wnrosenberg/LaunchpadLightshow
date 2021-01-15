@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+.cache*
+.cache/*
+dist*
+dist/*
