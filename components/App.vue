@@ -1,11 +1,14 @@
 <script>
 import ColorPalette from './ColorPalette.vue';
+import Launchpad from '../classes/Launchpad.js';
 export default {
   data() {
   	return {
   		// app-lvl data
   		previewColor: '#616161', // off,
-  		currentColor: '#616161'
+  		currentColor: '#616161',
+
+  		paletteOpen: false,
   	};
   },
   components: {
@@ -18,6 +21,14 @@ export default {
   	},
   	setCurrentColor: function(color) {
   		this.currentColor = color;
+  		this.toggleColorPalette();
+  	},
+  	toggleColorPalette: function(state) {
+  		if (state !== undefined) {
+  			this.paletteOpen = state;
+  		} else {
+  			this.paletteOpen = !this.paletteOpen;
+  		}
   	}
   },
   computed: {},
@@ -26,9 +37,11 @@ export default {
 <template lang="pug">
 	.div
 		.colorPreview(
+			@click="toggleColorPalette"
 			:style="{backgroundColor: previewColor}"
 		)
 		color-palette(
+			v-show="paletteOpen"
 			@hover-color="setColorPreview"
 			@choose-color="setCurrentColor"
 			:current-color="currentColor"
