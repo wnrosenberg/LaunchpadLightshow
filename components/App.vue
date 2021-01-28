@@ -121,7 +121,7 @@ export default {
             if (i === 0 && j === 0 || i === (max-1) && j === 0 || i === 0 && j === (max-1) || i === (max-1) && j === (max-1)) {
               pads.push([index, null, null, null]);
             } else {
-              pads.push([index, null, null, 'ctrl']);
+              pads.push([index, true, 0, 'ctrl']);
             }
           } else {
             pads.push([index, true, colorIndex++, 'note']);

@@ -4,12 +4,13 @@ import WebMidi from 'webmidi';
 class PadButton {
 	constructor(options) {
 		this.type = null; // set by subclass constructor
-		this.midiNote = options.midiNote || null;
+		this.midiNote = options.note || null;
 		this.midiVel = options.midiVel || 0;
 		this.midiOn = options.midiOn || false;
 		this.index = options.index;
 		this.output = options.output || null;
 
+		this.getNote = this.getNote.bind(this);
 		this.setType = this.setType.bind(this);
 		this.getType = this.getType.bind(this);
 		this.setVelocity = this.setVelocity.bind(this);
@@ -18,6 +19,10 @@ class PadButton {
 		this.getNoteOn = this.getNoteOn.bind(this);
 		this.getIndex = this.getIndex.bind(this);
 		this.getState = this.getState.bind(this);
+	}
+
+	getNote() {
+		return this.midiNote;
 	}
 
 	setType(type) {

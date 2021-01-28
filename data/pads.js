@@ -7,7 +7,7 @@ export default [
 	{ index: 5,  note: 'B6',   type: 'ctrl', name: 'Session' },
 	{ index: 6,  note: 'C7',   type: 'ctrl', name: 'Note' },
 	{ index: 7,  note: 'C#7',  type: 'ctrl', name: 'Device' },
-	{ index: 8,  note: 'D-7',  type: 'ctrl', name: 'User' },
+	{ index: 8,  note: 'D7',   type: 'ctrl', name: 'User' },
 	{ index: 9 },
 	{ index: 10, note: 'G#5',  type: 'ctrl', name: 'Shift' },
 	{ index: 11, note: 'A5',   type: 'pad' },

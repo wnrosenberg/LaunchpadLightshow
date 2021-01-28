@@ -46,16 +46,21 @@ class Launchpad {
     this.onMidiReady = this.onMidiReady.bind(this);
     this.setPad = this.setPad.bind(this);
 
-    // Initialization
+    // navigator.requestMIDIAccess({sysex:false})
+    //   .then(function(access) {
+    //     //this.runInit();
+    //     // console.log("it has some pads: ", this.pads);
+    //     console.log(access);
+    //   });
     this.runInit();
-
-    console.log("it has some pads: ", this.pads);
   }
 
   onMidiReady() {
     console.log('onMidiReady callback started');
     // Reset all pads to OFF
     // allPadsOff();
+    // console.log('out', this.out);
+    // this.out.playNote(['C4','C5','C6'], 'all', {velocity: 120, rawVelocity: true});
 
     // @todo If there's a saved state, restore that and display message about restored state.
 
@@ -71,13 +76,15 @@ class Launchpad {
       this.outputs.push(event.port);
       // primary out is probably first detected
       // @todo its usually port 1
-      if (!this.out) this.out = event.port;
+      if (event.port.id === 'output-2') {
+        this.out = event.port;
+      }
     }
     // If all are connected, we are ready to go.
     if (this.inputs.length + this.outputs.length === 6) {
       this.midiReady = true;
       console.log('LAUNCHPAD READY');
-      onMidiReady();
+      this.onMidiReady();
     }
   };
   onWebMidiEnabled(err) {
@@ -85,7 +92,18 @@ class Launchpad {
       console.error("WebMidi could not be enabled, continuing with standard experience.", err);
     } else {
       this.midiEnabled = true;
-      WebMidi.addListener("connected", this.onMidiPortConnected);
+      if (WebMidi.inputs.length + WebMidi.outputs.length === 6) {
+        console.log('ports already connected');
+        // ports already connected.
+        this.inputs = [...WebMidi.inputs];
+        this.outputs = [...WebMidi.outputs];
+        this.out = WebMidi.outputs[1];
+        this.midiReady = true;
+        console.log('LAUNCHPAD READY');
+        this.onMidiReady();
+      } else {
+        WebMidi.addListener("connected", this.onMidiPortConnected);
+      }
     }
   };
 
@@ -128,7 +146,7 @@ class Launchpad {
   }
   resumeGridState(state) {
     state.forEach((padState)=>{
-      console.log(padState);
+      // console.log(padState);
       if (padState && padState.length) {
         this.setPad(padState[0], {
           noteOn: padState[1],
@@ -140,12 +158,18 @@ class Launchpad {
   
   setPad(index, data) {
     const pad = this.pads[index];
-    if (pad !== null) {
-      console.log(`Launchpad.setPad (${index}, data):`, data);
-      if (data.noteOn !== null) pad.setNoteOn(data.noteOn);
-      if (data.velocity !== null) pad.setVelocity(data.velocity);
+    // console.log(`Launchpad.setPad (${index}, data):`, data, pad, this.out, this.outputs);
+    if (pad === null) {
+      return;
+    }
+    if (data.noteOn !== null) pad.setNoteOn(data.noteOn);
+    if (data.velocity !== null) pad.setVelocity(data.velocity);
+    if (this.midiReady) {
+      // console.log(`this.out.playNote(['${pad.getNote()}'], 'all', {velocity: ${data.velocity}, rawVelocity: true});`)
+      this.out.playNote([pad.getNote()], 'all', {velocity: data.velocity, rawVelocity: true});
     }
   }
+
 }
 
 export default Launchpad;
