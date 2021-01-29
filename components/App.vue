@@ -4,12 +4,15 @@ import PadGrid from './PadGrid.vue';
 import Launchpad from '../classes/Launchpad.js';
 import {colors, colorOff} from '../data/colors.js';
 import {indexOff} from '../data/constants.js';
+import * as grid from '../helpers/grid.js';
+
 
 export default {
   data() {
     return {
       // The global launchpad object.
       launchpad: new Launchpad({}), // + midi functionality
+      launchpadReady: false, // window.emit(launchpad-ready)
       
       // Colors / Palette Data
       previewColor: colorOff,
@@ -20,7 +23,7 @@ export default {
       paletteTopRow: 0,
 
       // Pads / Grid State
-      gridState: this.getInitialState(), // current grid state
+      gridState: grid.getInitialState(), // current grid state
       stateBeforeModal: null,
     };
   },
@@ -32,6 +35,9 @@ export default {
   methods: {
     created: function() {
       this.gridState = this.launchpad.getGridState();
+      window.addEventListener('launchpad-ready', function(){
+        this.launchpadReady = true;
+      }, false);
     },
     setColorPreview: function(colorIndex) {
       this.previewColor = colors[colorIndex];
@@ -56,7 +62,7 @@ export default {
 
         // Uninitialized palette starts at row 0;
         let topRow = 0;
-        const pads = this.getPaletteState(topRow);
+        const pads = grid.getPaletteState(topRow);
 
         // Send to the launchpad (@todo if paletteOnLp)
         this.launchpad.resumeGridState(pads);
@@ -95,41 +101,6 @@ export default {
         // close the palette
       }
     },
-    getInitialState: function() {
-      const pads = [];
-      const max = 10;
-      for (let i=0; i<max; i++) {
-        for (let j=0; j<max; j++) {
-          let index = i*max+j;
-          if (i === 0 || i === (max-1) || j === 0 || j === (max-1)) {
-            if (i === 0 && j === 0 || i === (max-1) && j === 0 || i === 0 && j === (max-1) || i === (max-1) && j === (max-1)) {
-              pads.push([index, null, null, null]);
-            } else pads.push([index, true, 0, 'ctrl']);
-          } else pads.push([index, true, 0, 'note']);
-        }
-      }
-      return pads;
-    },
-    getPaletteState: function(topRow) {
-      const pads = [];
-      const max = 10;
-      let colorIndex = topRow * 8;
-      for (let i=0; i<max; i++) {
-        for (let j=0; j<max; j++) {
-          let index = i*max+j;
-          if (i === 0 || i === (max-1) || j === 0 || j === (max-1)) {
-            if (i === 0 && j === 0 || i === (max-1) && j === 0 || i === 0 && j === (max-1) || i === (max-1) && j === (max-1)) {
-              pads.push([index, null, null, null]);
-            } else {
-              pads.push([index, true, 0, 'ctrl']);
-            }
-          } else {
-            pads.push([index, true, colorIndex++, 'note']);
-          }
-        }
-      }
-      return pads;
-    },
     handlePaletteCtrlDown: function() {
       console.log('clicked the DOWN control');
       console.log('topRow before click was', this.paletteTopRow);
@@ -141,7 +112,7 @@ export default {
     handlePaletteTopRowChange: function(newRow) {
       this.paletteTopRow = newRow;
       if (this.paletteOpen && this.paletteOnLp) {
-        const newPaletteState = this.getPaletteState(newRow);
+        const newPaletteState = grid.getPaletteState(newRow);
         this.launchpad.resumeGridState(newPaletteState);
         this.gridState = [...newPaletteState];
       }
@@ -171,6 +142,7 @@ export default {
         :current-color-index="currentColorIndex"
         :grid-state="gridState"
         :lp="launchpad"
+        :connected="launchpadReady"
         @click-pad="handlePadClick"
       )
 </template>

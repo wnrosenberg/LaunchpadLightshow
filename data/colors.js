@@ -1,7 +1,7 @@
 const allColors = [
-    '#616161', // 0/off
-    '#B3B3B3',
-    '#DDDDDD',
+    '#8a8a8a', // 0/off
+    '#c3c3c3',
+    '#e1e1e1',
     '#FFFFFF',
     '#FFB3B3',
     '#FF6161',

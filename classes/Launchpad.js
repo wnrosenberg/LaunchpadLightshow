@@ -2,6 +2,7 @@
 import WebMidi from 'webmidi';
 import PadButton from './PadButton';
 import PadData from '../data/pads.js';
+import * as grid from '../helpers/grid.js';
 
 class Ctrl extends PadButton {
   constructor(options) {
@@ -34,33 +35,28 @@ class Launchpad {
     this.padsReady = false;
     this.midiEnabled = false;
     this.midiReady = false;
-    this.inputs = []; // list of MIDI ins
-    this.outputs = []; // list of MIDI outs
+    this.inputs = []; // list of WebMidi Input Ports
+    this.outputs = []; // list of WebMidi Output Ports
     this.in = null; // primary input, or null to listen on all
-    this.out = null; // primary out we are sending to
+    this.out = null; // default out to send noteOn
 
     // Methods
     this.runInit = this.runInit.bind(this);
     this.onWebMidiEnabled =  this.onWebMidiEnabled.bind(this);
     this.onMidiPortConnected = this.onMidiPortConnected.bind(this);
     this.onMidiReady = this.onMidiReady.bind(this);
+    this.getPad = this.getPad.bind(this);
     this.setPad = this.setPad.bind(this);
 
-    // navigator.requestMIDIAccess({sysex:false})
-    //   .then(function(access) {
-    //     //this.runInit();
-    //     // console.log("it has some pads: ", this.pads);
-    //     console.log(access);
-    //   });
     this.runInit();
   }
 
   onMidiReady() {
+    window.dispatchEvent(new Event('launchpad-ready'));
     console.log('onMidiReady callback started');
+    
     // Reset all pads to OFF
-    // allPadsOff();
-    // console.log('out', this.out);
-    // this.out.playNote(['C4','C5','C6'], 'all', {velocity: 120, rawVelocity: true});
+    this.resumeGridState(grid.getInitialState());
 
     // @todo If there's a saved state, restore that and display message about restored state.
 
@@ -74,8 +70,6 @@ class Launchpad {
     }
     if (event.port.type === 'output') {
       this.outputs.push(event.port);
-      // primary out is probably first detected
-      // @todo its usually port 1
       if (event.port.id === 'output-2') {
         this.out = event.port;
       }
@@ -155,7 +149,11 @@ class Launchpad {
       }
     });
   }
-  
+
+  getPad(index) {
+    return this.pads[index];
+  }
+
   setPad(index, data) {
     const pad = this.pads[index];
     // console.log(`Launchpad.setPad (${index}, data):`, data, pad, this.out, this.outputs);
