@@ -10,6 +10,7 @@
     "start": "parcel index.html --https"
   },
   "dependencies": {
+    "jzz": "^1.2.3",
     "vue": "^2.6.12",
     "vue-hot-reload-api": "^2.3.4",
     "webmidi": "^2.5.1"

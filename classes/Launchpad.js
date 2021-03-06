@@ -1,8 +1,15 @@
 // class Launchpad
-import WebMidi from 'webmidi';
+import JZZ from 'jzz';
 import PadButton from './PadButton';
 import PadData from '../data/pads.js';
 import * as grid from '../helpers/grid.js';
+import {
+  getMsg,
+  TYPE_MODE_SET,
+  TYPE_LAYOUT_SET,
+  TYPE_PAD_COLOR,
+  TYPE_GRID_COLOR,
+} from '../helpers/message.js';
 
 class Ctrl extends PadButton {
   constructor(options) {
@@ -29,82 +36,106 @@ class Launchpad {
   constructor() {
     console.log("U made a Launchpad");
 
+    // Logs msg to the console.
+    this.logger = (msg, i) => {
+      let index = i !== undefined ? `[${i}]` : '';
+      console.log(`msg${index}: ${msg.toString()}`);
+    };
+
     // State
     this.notes = {ctrl: [], pad: []};
     this.pads = [];
     this.padsReady = false;
-    this.midiEnabled = false;
-    this.midiReady = false;
-    this.inputs = []; // list of WebMidi Input Ports
-    this.outputs = []; // list of WebMidi Output Ports
+
     this.in = null; // primary input, or null to listen on all
     this.out = null; // default out to send noteOn
 
-    // Methods
-    this.runInit = this.runInit.bind(this);
-    this.onWebMidiEnabled =  this.onWebMidiEnabled.bind(this);
-    this.onMidiPortConnected = this.onMidiPortConnected.bind(this);
-    this.onMidiReady = this.onMidiReady.bind(this);
-    this.getPad = this.getPad.bind(this);
-    this.setPad = this.setPad.bind(this);
+    this.logInputs = this.logInputs.bind(this);
 
-    this.runInit();
+    this.deviceInit();
   }
 
-  onMidiReady() {
-    window.dispatchEvent(new Event('launchpad-ready'));
-    console.log('onMidiReady callback started');
-    
-    // Reset all pads to OFF
-    this.resumeGridState(grid.getInitialState());
-
-    // @todo If there's a saved state, restore that and display message about restored state.
-
-    // @Todo highlight the control pads
-  }
-
-  onMidiPortConnected(event) {
-    // Launchpad has 6 ports.
-    if (event.port.type === 'input') {
-      this.inputs.push(event.port);
-    }
-    if (event.port.type === 'output') {
-      this.outputs.push(event.port);
-      if (event.port.id === 'output-2') {
-        this.out = event.port;
-      }
-    }
-    // If all are connected, we are ready to go.
-    if (this.inputs.length + this.outputs.length === 6) {
-      this.midiReady = true;
-      console.log('LAUNCHPAD READY');
-      this.onMidiReady();
-    }
-  };
-  onWebMidiEnabled(err) {
-    if (err) {
-      console.error("WebMidi could not be enabled, continuing with standard experience.", err);
-    } else {
-      this.midiEnabled = true;
-      if (WebMidi.inputs.length + WebMidi.outputs.length === 6) {
-        console.log('ports already connected');
-        // ports already connected.
-        this.inputs = [...WebMidi.inputs];
-        this.outputs = [...WebMidi.outputs];
-        this.out = WebMidi.outputs[1];
-        this.midiReady = true;
-        console.log('LAUNCHPAD READY');
-        this.onMidiReady();
-      } else {
-        WebMidi.addListener("connected", this.onMidiPortConnected);
+  setAllPadsOff(sidetoo = false) {
+    if (this.out) {
+      this.out.send(getMsg(TYPE_GRID_COLOR, [0]));
+      if (sidetoo) {
+        this.out.send(getMsg(TYPE_PAD_COLOR, [0x63, 0]));
       }
     }
   };
+
+  logInputs() {
+    let input;
+    for (let i = 0; i < JZZ().info().inputs.length; i++) {
+      input = JZZ().openMidiIn(i);
+      input.connect(this.logger);
+    }
+  };
+
+  deviceInit() {
+    const self = this;
+    JZZ({sysex: true}).or('Cannot start MIDI engine!').and(function(){
+      console.log('JZZ initialized', JZZ().info());
+      self.logInputs(); // console.log all input port messages
+      self.out = JZZ().openMidiOut(1);
+
+      // Set to programmer layout if it isn't already.
+      // this.out.send(getMsg(TYPE_MODE_SET, 1)); // set to standalone if in ableton mode
+      self.out.send(getMsg(TYPE_LAYOUT_SET, 3)); // set to programmer layout if in another
+
+      // Reset all pads to OFF
+      self.setAllPadsOff();
+
+      // Set "all pads off" as the current grid state.
+      self.resumeGridState(grid.getInitialState());
+
+      // initalize the rest of this app.
+      runInit();
+    });
+  }
+
+  
+
+
+  // onMidiPortConnected(event) {
+  //   // Launchpad has 6 ports.
+  //   if (event.port.type === 'input') {
+  //     this.inputs.push(event.port);
+  //   }
+  //   if (event.port.type === 'output') {
+  //     this.outputs.push(event.port);
+  //     if (event.port.id === 'output-2') {
+  //       this.out = event.port;
+  //     }
+  //   }
+  //   // If all are connected, we are ready to go.
+  //   if (this.inputs.length + this.outputs.length === 6) {
+  //     this.midiReady = true;
+  //     console.log('LAUNCHPAD READY');
+  //     this.onMidiReady();
+  //   }
+  // };
+  // onWebMidiEnabled(err) {
+  //   if (err) {
+  //     console.error("WebMidi could not be enabled, continuing with standard experience.", err);
+  //   } else {
+  //     this.midiEnabled = true;
+  //     if (WebMidi.inputs.length + WebMidi.outputs.length === 6) {
+  //       console.log('ports already connected');
+  //       // ports already connected.
+  //       this.inputs = [...WebMidi.inputs];
+  //       this.outputs = [...WebMidi.outputs];
+  //       this.out = WebMidi.outputs[1];
+  //       this.midiReady = true;
+  //       console.log('LAUNCHPAD READY');
+  //       this.onMidiReady();
+  //     } else {
+  //       WebMidi.addListener("connected", this.onMidiPortConnected);
+  //     }
+  //   }
+  // };
 
   runInit() {
-    // Setup the MIDI Interface
-    WebMidi.enable(this.onWebMidiEnabled);
-
     // Build the Pad components
     const padObjs = [];
     const notes = {ctrl: [], pad: []};

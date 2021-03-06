@@ -6,7 +6,6 @@ import {colors, colorOff} from '../data/colors.js';
 import {indexOff} from '../data/constants.js';
 import * as grid from '../helpers/grid.js';
 
-
 export default {
   data() {
     return {
